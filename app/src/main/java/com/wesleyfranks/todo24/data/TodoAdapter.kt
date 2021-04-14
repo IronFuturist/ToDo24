@@ -11,10 +11,14 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.snackbar.Snackbar
+import com.wesleyfranks.todo24.R
 import com.wesleyfranks.todo24.databinding.TodoListItemBinding
 import com.wesleyfranks.todo24.util.ConstantVar
 
-class TodoAdapter(private val completedChecked: CompletedChecked, private val clickedTodo: ClickedTodo, private val deleteTodo: DeleteTodo) :
+class TodoAdapter(
+    private val completedChecked: CompletedChecked? = null,
+    private val clickedTodo: ClickedTodo? = null,
+    private val deleteTodo: DeleteTodo? = null) :
     ListAdapter<Todo, TodoAdapter.ViewHolder>(TodoDiffUtil()) {
 
     companion object{
@@ -24,7 +28,7 @@ class TodoAdapter(private val completedChecked: CompletedChecked, private val cl
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val itemBinding = TodoListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(itemBinding, completedChecked, clickedTodo, deleteTodo)
+        return ViewHolder(itemBinding, completedChecked!!, clickedTodo!!, deleteTodo!!)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -42,26 +46,37 @@ class TodoAdapter(private val completedChecked: CompletedChecked, private val cl
         fun bind(todo: Todo) {
 
             itemBinding.root.setOnClickListener {
-                Snackbar.make(it,"Clicked ${todo.pk}",Snackbar.LENGTH_SHORT).show()
+                clickedTodo.OnItemClicked(todo)
             }
 
+            setCompletedCheck(todo)
+
             itemBinding.todoItemCheck.setOnClickListener {
-                if (itemBinding.todoItemCheck.isChecked){
-                    completedChecked.OnRadioButtonChecked(todo, adapterPosition)
+                if (todo.completed){
+                    itemBinding.todoItemCheck.isChecked = true
+                    completedChecked.OnRadioButtonChecked(todo)
+                }else{
+                    itemBinding.todoItemCheck.isChecked = false
+                    completedChecked.OnRadioButtonChecked(todo)
                 }
             }
 
             itemBinding.todoItemDelete.setOnClickListener {
-                val materialDialog = MaterialDialog(itemBinding.root.context)
-                materialDialog.show {
-                    cornerRadius(5f)
-                    title(null,"Delete")
-                    message {  }
-                }
+                deleteTodo.OnItemDelete(todo)
             }
 
             itemBinding.todoItemTitle.text = todo.title
             itemBinding.todoItemTimestamp.text = todo.timestamp
+        }
+
+        private fun setCompletedCheck(todo: Todo) {
+            if (todo.completed) {
+                itemBinding.todoItemCheck.isChecked = true
+                return
+            } else {
+                itemBinding.todoItemCheck.isChecked = false
+                return
+            }
         }
     }
 
@@ -78,14 +93,14 @@ class TodoAdapter(private val completedChecked: CompletedChecked, private val cl
 
 
     interface CompletedChecked{
-        fun OnRadioButtonChecked(todo: Todo, pos: Int)
+        fun OnRadioButtonChecked(todo: Todo)
     }
 
     interface ClickedTodo{
-        fun OnItemClicked(todo: Todo, pos: Int)
+        fun OnItemClicked(editViewTodo: Todo)
     }
 
     interface DeleteTodo{
-        fun OnItemDelete(todo: Todo, pos: Int)
+        fun OnItemDelete(todo: Todo)
     }
 }
